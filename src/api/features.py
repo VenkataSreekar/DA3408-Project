@@ -66,6 +66,14 @@ def tag_history(contest_ids: list, by_contest: dict, solved_in_contest: set):
     return n, s
 
 
+def weakness(problem: dict, n: dict, s: dict) -> float:
+    """1 - mean smoothed solve rate over the problem's REAL tags (0 if untagged)."""
+    tags = problem.get("tags") or []
+    if not tags:
+        return 0.0
+    return 1 - sum(smoothed_rate(n, s, t) for t in tags) / len(tags)
+
+
 def smoothed_rate(n: dict, s: dict, tag: str) -> float:
     return (s.get(tag, 0) + PRIOR_STRENGTH * PRIOR_RATE) / (n.get(tag, 0) + PRIOR_STRENGTH)
 

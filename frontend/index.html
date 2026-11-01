@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next Problem</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto;
+           padding: 0 1rem; color: #1a1a1a; background: #fafafa; }
+    h1 { margin-bottom: .2rem; }
+    .sub { color: #555; margin-top: 0; }
+    form { display: flex; gap: .5rem; flex-wrap: wrap; margin: 1.2rem 0; }
+    input, select, button { font-size: 1rem; padding: .5rem .7rem;
+                            border: 1px solid #bbb; border-radius: 6px; }
+    input { flex: 1; min-width: 200px; }
+    button { background: #2457c5; color: #fff; border-color: #2457c5; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    .msg { padding: .7rem 1rem; border-radius: 6px; margin: 1rem 0; }
+    .info { background: #e8f0fe; }
+    .error { background: #fde8e8; color: #8a1c1c; }
+    .chip { display: inline-block; background: #eee; border-radius: 12px;
+            padding: .1rem .6rem; margin: .1rem .2rem .1rem 0; font-size: .85rem; }
+    .wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #e5e5e5;
+             font-size: .95rem; }
+    details { margin: 1rem 0; color: #333; }
+    footer { margin-top: 2.5rem; font-size: .9rem; color: #555; }
+    footer a { margin-right: 1rem; }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+  <h1>Next Problem</h1>
+  <p class="sub">Codeforces practice problems picked for you: hard enough to learn from,
+     not so hard that they frustrate.</p>
+
+  <details>
+    <summary>How to use</summary>
+    <ol>
+      <li>Type your Codeforces handle (the name on your profile).</li>
+      <li>Choose how many problems you want and press <b>Get problems</b>.</li>
+      <li>Wait a few seconds. You will see your weakest topics and a list of problems.
+          Click a problem name to open it on Codeforces.</li>
+    </ol>
+    <p>Solve chance is the model's estimate that you solve the problem. Problems shown
+       are in the 50-70% range and focus on your weakest topics.</p>
+  </details>
+
+  <form id="form">
+    <input id="handle" type="text" placeholder="Codeforces handle, e.g. Venkata_Sreekar"
+           autocomplete="off" maxlength="24" required>
+    <select id="k" aria-label="Number of problems">
+      <option value="5">5 problems</option>
+      <option value="10" selected>10 problems</option>
+      <option value="20">20 problems</option>
+    </select>
+    <button id="go" type="submit">Get problems</button>
+  </form>
+
+  <div id="msg" class="msg" hidden></div>
+
+  <section id="results" hidden>
+    <p id="summary"></p>
+    <p id="weak"></p>
+    <div class="wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Problem</th><th>Rating</th><th>Topics</th>
+              <th>Solve chance</th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer id="links"></footer>
+
+  <script>
+    const CFG = window.APP_CONFIG || {};
+    const API = CFG.API_URL || "http://localhost:8000";
+    const $ = (id) => document.getElementById(id);
+
+    function showMsg(kind, text) {
+      const m = $("msg");
+      m.className = "msg " + kind;
+      m.textContent = text;
+      m.hidden = false;
+    }
+
+    function addCell(tr, text) {
+      const td = document.createElement("td");
+      td.textContent = text;
+      tr.appendChild(td);
+      return td;
+    }
+
+    function render(data) {
+      $("summary").textContent =
+        `${data.handle} (rating ${data.rating}): ${data.in_zone} suitable problems found, ` +
+        `showing the top ${data.recommendations.length}.`;
+
+      const weak = $("weak");
+      weak.textContent = "";
+      if (data.weak_tags.length) {
+        weak.append("Your weakest topics: ");
+        data.weak_tags.forEach((t) => {
+          const chip = document.createElement("span");
+          chip.className = "chip";
+          chip.textContent = t.tag;
+          weak.appendChild(chip);
+        });
+      }
+
+      const body = $("rows");
+      body.textContent = "";
+      data.recommendations.forEach((r, i) => {
+        const tr = document.createElement("tr");
+        addCell(tr, String(i + 1));
+        const nameCell = addCell(tr, "");
+        const label = `${r.contest_id}${r.index} - ${r.name}`;
+        if (typeof r.url === "string" && r.url.startsWith("https://codeforces.com/")) {
+          const a = document.createElement("a");
+          a.href = r.url;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = label;
+          nameCell.appendChild(a);
+        } else {
+          nameCell.textContent = label;
+        }
+        addCell(tr, String(r.rating));
+        addCell(tr, r.tags.join(", "));
+        addCell(tr, Math.round(r.p_solve * 100) + "%");
+        body.appendChild(tr);
+      });
+
+      $("results").hidden = false;
+      if (!data.recommendations.length) {
+        showMsg("info", "No problems in the 50-70% range were found for this handle.");
+      }
+    }
+
+    $("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const handle = $("handle").value.trim();
+      if (!handle) {
+        showMsg("error", "Please enter a Codeforces handle.");
+        return;
+      }
+      $("go").disabled = true;
+      $("results").hidden = true;
+      showMsg("info",
+        "Fetching your data from Codeforces. This can take about 10 seconds the first time.");
+      try {
+        const url = `${API}/recommend?handle=${encodeURIComponent(handle)}&k=${$("k").value}`;
+        const res = await fetch(url);
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const detail = typeof data.detail === "string" ? data.detail : null;
+          showMsg("error", detail || `Something went wrong (error ${res.status}).`);
+          return;
+        }
+        $("msg").hidden = true;
+        render(data);
+      } catch (err) {
+        showMsg("error",
+          "Cannot reach the recommendation service. Please check that it is running.");
+      } finally {
+        $("go").disabled = false;
+      }
+    });
+
+    // Links to the MLOps tools (pipeline visibility), taken from config.js.
+    const links = [
+      ["Experiments and models (MLflow)", CFG.MLFLOW_URL],
+      ["Monitoring dashboard (Grafana)", CFG.GRAFANA_URL],
+      ["Metrics (Prometheus)", CFG.PROMETHEUS_URL],
+    ];
+    const footer = $("links");
+    links.forEach(([text, href]) => {
+      if (!href) return;
+      const a = document.createElement("a");
+      a.href = href;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = text;
+      footer.appendChild(a);
+    });
+  </script>
+</body>
+</html>

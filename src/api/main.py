@@ -196,8 +196,12 @@ def recommend(
         raise HTTPException(503, "The model service is unavailable. Try again later.")
 
     # 4. Keep the stretch zone, rank by weakest topics (then closeness to 60%).
-    zone = [(p, r, pr) for p, r, pr in zip(candidates, rows, probs) if low <= pr <= high]
-    zone.sort(key=lambda t: (-(1 - t[1]["tag_rate_mean"]), abs(t[2] - 0.6)))
+        # 4. Keep the stretch zone, rank by weakest topics (then closeness to 60%).
+    zone = [
+        (p, pr, features.weakness(p, n, s))
+        for p, pr in zip(candidates, probs) if low <= pr <= high
+    ]
+    zone.sort(key=lambda t: (-t[2], abs(t[1] - 0.6)))
 
     recommendations = [
         {
@@ -207,10 +211,10 @@ def recommend(
             "rating": p["rating"],
             "tags": p.get("tags", []),
             "p_solve": round(pr, 3),
-            "weakness": round(1 - r["tag_rate_mean"], 3),
+            "weakness": round(w, 3),
             "url": f"https://codeforces.com/problemset/problem/{p['contestId']}/{p['index']}",
         }
-        for p, r, pr in zone[:k]
+        for p, pr, w in zone[:k]
     ]
     log.info("handle=%s rating=%s candidates=%d in_zone=%d took=%.1fs",
              handle, rating, len(candidates), len(zone), time.time() - started)
