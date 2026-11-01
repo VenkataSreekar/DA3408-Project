@@ -1,5 +1,15 @@
-data/raw
-data/processed
 mlruns
 __pycache__
 .venv
+mlruns
+mlartifacts
+mlflow.db
+__pycache__
+*.pyc
+.venv
+fetch.log
+nohup.out
+spark-warehouse
+metastore_db
+derby.log
+.ipynb_checkpoints

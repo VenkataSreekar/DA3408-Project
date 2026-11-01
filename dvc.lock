@@ -1,0 +1,43 @@
+schema: '2.0'
+stages:
+  fetch:
+    cmd: python src/ingestion/fetch_codeforces.py --n-contests 70 --users 1500 
+      --out data/raw
+    deps:
+    - path: src/ingestion/fetch_codeforces.py
+      hash: md5
+      md5: 3dab51b8c377626239937e648e50c4e6
+      size: 4734
+    outs:
+    - path: data/raw
+      hash: md5
+      md5: 24a257be7251cb730323399b3e3e9183.dir
+      size: 18423852
+      nfiles: 142
+  features:
+    cmd: python src/features/spark_features.py --raw data/raw --out 
+      data/processed
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 24a257be7251cb730323399b3e3e9183.dir
+      size: 18423852
+      nfiles: 142
+    - path: src/features/spark_features.py
+      hash: md5
+      md5: eced4ff1079e9a182c15c33490f610e5
+      size: 8093
+    outs:
+    - path: data/processed/features.parquet
+      hash: md5
+      md5: 6ba9e0da3d90219c9f67f3022b7b2ea7.dir
+      size: 6974045
+      nfiles: 34
+    - path: data/processed/spark_metrics.json
+      hash: md5
+      md5: ccab8c60b0743ff28278f30b98547d9f
+      size: 231
+    - path: data/processed/train_stats.json
+      hash: md5
+      md5: 123fabd1cf342a1e3948105e4cdc7134
+      size: 297
