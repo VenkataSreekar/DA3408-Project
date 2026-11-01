@@ -1,0 +1,13 @@
+{
+  "rows": 339576,
+  "contests": 68,
+  "users": 10270,
+  "label_rate": 0.35605578721700004,
+  "split_rows": {
+    "val": 44234,
+    "test": 31820,
+    "train": 263522
+  },
+  "elapsed_seconds": 31.14,
+  "rows_per_second": 10903.5
+}

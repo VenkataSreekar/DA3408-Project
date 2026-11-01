@@ -14,6 +14,7 @@ import json
 import logging
 import time
 from pathlib import Path
+import zlib
 
 import requests
 
@@ -30,7 +31,7 @@ def call(method: str, **params):
     for attempt in range(1, MAX_RETRIES + 1):
         try:
             time.sleep(SLEEP_SECONDS)
-            resp = requests.get(BASE + method, params=params, timeout=60)
+            resp = requests.get(BASE + method, params=params, timeout=180)
             data = resp.json()
             if data.get("status") == "OK":
                 return data["result"]
@@ -94,14 +95,20 @@ def main() -> None:
         if not ratings:
             log.info("Contest %s has no rating changes, skipping", cid)
             continue
-        standings = call(
-            "contest.standings",
-            contestId=cid, **{"from": 1}, count=args.users, showUnofficial="false",
-        )
+        standings = call("contest.standings", contestId=cid)
         if not standings:
             continue
 
-        save(rc_file, ratings)
+        # Stable ~10% user cohort (same users across contests, all skill levels)
+        cohort = [
+            r for r in standings["rows"]
+            if zlib.crc32(r["party"]["members"][0]["handle"].encode()) % 10 == 0
+        ][: args.users]
+        cohort_handles = {r["party"]["members"][0]["handle"] for r in cohort}
+
+        # Keep only cohort users' rating changes
+        save(rc_file, [x for x in ratings if x["handle"] in cohort_handles])
+
         # Keep only what we need: problems + (handle, per-problem points)
         slim = {
             "contest": standings["contest"],
@@ -112,7 +119,7 @@ def main() -> None:
                     "rank": r["rank"],
                     "solved": [pr["points"] > 0 for pr in r["problemResults"]],
                 }
-                for r in standings["rows"]
+                for r in cohort
             ],
         }
         save(st_file, slim)
