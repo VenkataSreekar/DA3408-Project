@@ -1,0 +1,32 @@
+{
+  "elo_baseline": {
+    "val": {
+      "log_loss": 0.2322686274931346,
+      "auc": 0.9685423482522475
+    },
+    "test": {
+      "log_loss": 0.24178528349780554,
+      "auc": 0.9645896703908942
+    }
+  },
+  "best_model": {
+    "run_id": "ff7d42dbf758442ab42e48ee54948157",
+    "config": {
+      "learning_rate": 0.05,
+      "max_iter": 200,
+      "max_depth": 6
+    },
+    "val": {
+      "log_loss": 0.21507118892455712,
+      "auc": 0.9701004668680075
+    },
+    "test": {
+      "log_loss": 0.22120545928822857,
+      "auc": 0.9676206908614372
+    }
+  },
+  "beats_baseline": true,
+  "registered_version": 1,
+  "git_commit": "617181ef30398bdbb45e776d1e01a4c2f2124bcd",
+  "data_md5": "6ba9e0da3d90219c9f67f3022b7b2ea7.dir"
+}
