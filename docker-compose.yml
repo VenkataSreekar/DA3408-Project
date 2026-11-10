@@ -1,0 +1,65 @@
+services:
+  # MLflow model server: serves the registered "champion" model over REST.
+  model:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.model
+    image: next-problem-model
+    ports:
+      - "5001:5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  # FastAPI backend: builds features and calls the model server via MODEL_URL.
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    image: next-problem-backend
+    environment:
+      MODEL_URL: http://model:5001/invocations
+      HISTORY_CONTESTS: "15"
+      CORS_ORIGINS: "*"
+    ports:
+      - "8000:8000"
+    depends_on:
+      model:
+        condition: service_healthy
+
+  # Static frontend served by Apache httpd. It only knows the backend URL via config.js.
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    image: next-problem-frontend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/config.js:/usr/local/apache2/htdocs/config.js:ro
+    depends_on:
+      - backend
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus

@@ -1,0 +1,10 @@
+.git
+.dvc
+data/raw
+data/processed/features.parquet
+mlruns
+mlartifacts
+mlflow.db
+__pycache__
+*.pyc
+fetch.log
