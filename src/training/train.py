@@ -5,6 +5,11 @@ Usage:
     python src/training/train.py --data data/processed/features.parquet \
         --metrics-out metrics/train_metrics.json
 
+Run structure in MLflow:
+    train_pipeline            (parent: tags, headline metrics, summary artifact)
+      |- elo_baseline         (nested)
+      |- hgb_0, hgb_1, hgb_2  (nested, one per configuration)
+
 Tracked beyond autolog:
     - git commit hash + dirty flag, and the DVC md5 of the feature file
     - split row counts and the time boundaries between train / val / test
@@ -12,6 +17,9 @@ Tracked beyond autolog:
 Model selection uses VALIDATION log loss only. Test is reported, never used
 to choose. The registered model gets the alias "champion" only if it beats the
 Elo baseline on test log loss AND test AUC (the project's acceptance criterion).
+
+Works both as a plain script / DVC stage and under `mlflow run` (MLproject):
+in the latter case the project run created by MLflow is resumed as the parent.
 """
 import argparse
 import json
@@ -111,14 +119,8 @@ def log_sklearn_model(model, x_example: pd.DataFrame) -> str:
     return info.model_uri
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--data", default="data/processed/features.parquet")
-    ap.add_argument("--metrics-out", default="metrics/train_metrics.json")
-    ap.add_argument("--tracking-uri", default="sqlite:///mlflow.db")
-    ap.add_argument("--spark-metrics", default="data/processed/spark_metrics.json")
-    args = ap.parse_args()
-
+def run_pipeline(args) -> None:
+    """Everything that happens inside the parent MLflow run."""
     df = pd.read_parquet(args.data)
     parts = {s: df[df["split"] == s] for s in ("train", "val", "test")}
     # float64 everywhere keeps the served model's input schema simple.
@@ -126,18 +128,16 @@ def main() -> None:
     y = {s: d["label"].astype(int).to_numpy() for s, d in parts.items()}
     log.info("Rows: %s", {s: len(d) for s, d in parts.items()})
 
-    mlflow.set_tracking_uri(args.tracking_uri)
-    mlflow.set_experiment(EXPERIMENT)
-    mlflow.sklearn.autolog(
-        log_models=False, log_datasets=False, log_post_training_metrics=False
-    )
-
     tags = {**git_info(), "data_md5": dvc_data_md5()}
     data_params = split_params(parts)
 
+    # Parent run (active here): reproducibility info and data description.
+    mlflow.set_tags({**tags, "model_type": "pipeline"})
+    mlflow.log_params(data_params)
+
     # ---- 1. Elo baseline -------------------------------------------------
     elo = {}
-    with mlflow.start_run(run_name="elo_baseline"):
+    with mlflow.start_run(run_name="elo_baseline", nested=True):
         mlflow.set_tags({**tags, "model_type": "elo_baseline"})
         mlflow.log_params(data_params)
         for s in ("val", "test"):
@@ -150,7 +150,7 @@ def main() -> None:
     # ---- 2. Gradient-boosted candidates -----------------------------------
     candidates = []
     for i, cfg in enumerate(CONFIGS):
-        with mlflow.start_run(run_name=f"hgb_{i}") as run:
+        with mlflow.start_run(run_name=f"hgb_{i}", nested=True) as run:
             mlflow.set_tags({**tags, "model_type": "hist_gradient_boosting"})
             mlflow.log_params(data_params)
 
@@ -216,6 +216,35 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(summary, indent=2))
     log.info("Summary written to %s", out)
+
+    # Headline numbers on the parent run (shown on the experiment page).
+    mlflow.log_metrics({
+        "best_test_log_loss": best["test"]["log_loss"],
+        "best_test_auc": best["test"]["auc"],
+        "elo_test_log_loss": elo["test"]["log_loss"],
+        "elo_test_auc": elo["test"]["auc"],
+    })
+    mlflow.set_tag("acceptance_passed", str(beats))
+    mlflow.log_artifact(str(out))
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data", default="data/processed/features.parquet")
+    ap.add_argument("--metrics-out", default="metrics/train_metrics.json")
+    ap.add_argument("--tracking-uri", default="sqlite:///mlflow.db")
+    ap.add_argument("--spark-metrics", default="data/processed/spark_metrics.json")
+    args = ap.parse_args()
+
+    mlflow.set_tracking_uri(args.tracking_uri)
+    mlflow.set_experiment(EXPERIMENT)
+    mlflow.sklearn.autolog(
+        log_models=False, log_datasets=False, log_post_training_metrics=False
+    )
+
+    # Under `mlflow run` this resumes the project run; otherwise it creates one.
+    with mlflow.start_run(run_name="train_pipeline"):
+        run_pipeline(args)
 
 
 if __name__ == "__main__":

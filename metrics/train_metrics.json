@@ -10,7 +10,7 @@
     }
   },
   "best_model": {
-    "run_id": "ff7d42dbf758442ab42e48ee54948157",
+    "run_id": "1ba5e0784ef3486589d198e8d972f183",
     "config": {
       "learning_rate": 0.05,
       "max_iter": 200,
@@ -26,7 +26,7 @@
     }
   },
   "beats_baseline": true,
-  "registered_version": 1,
-  "git_commit": "617181ef30398bdbb45e776d1e01a4c2f2124bcd",
+  "registered_version": 2,
+  "git_commit": "1c8c823a11430fcf78ef7635a35566d46730527a",
   "data_md5": "6ba9e0da3d90219c9f67f3022b7b2ea7.dir"
 }

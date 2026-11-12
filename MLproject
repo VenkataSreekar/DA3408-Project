@@ -1,0 +1,19 @@
+name: next-problem
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    command: "dvc repro"
+  fetch:
+    parameters:
+      n_contests: {type: int, default: 70}
+      users: {type: int, default: 1500}
+    command: "python src/ingestion/fetch_codeforces.py --n-contests {n_contests} --users {users} --out data/raw"
+  features:
+    command: "python src/features/spark_features.py --raw data/raw --out data/processed"
+  train:
+    parameters:
+      data: {type: string, default: "data/processed/features.parquet"}
+      metrics_out: {type: string, default: "metrics/train_metrics.json"}
+    command: "python src/training/train.py --data {data} --metrics-out {metrics_out}"

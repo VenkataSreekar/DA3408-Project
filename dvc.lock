@@ -52,10 +52,10 @@ stages:
       nfiles: 34
     - path: src/training/train.py
       hash: md5
-      md5: cdeefe43feb94d17ac96b77997bc1ee2
-      size: 8595
+      md5: fb002202e80b1ce9671b8db90e64d962
+      size: 9804
     outs:
     - path: metrics/train_metrics.json
       hash: md5
-      md5: b3e3810febfe2dd52771f212da8b5df8
+      md5: 4cd7b0fdc9b8fc29a271c778a94e8748
       size: 726

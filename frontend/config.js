@@ -3,6 +3,6 @@
 window.APP_CONFIG = {
   API_URL: "http://localhost:8000",
   MLFLOW_URL: "http://localhost:5000",
-  GRAFANA_URL: "http://localhost:3000",
+  GRAFANA_URL: "http://localhost:3001",
   PROMETHEUS_URL: "http://localhost:9090",
 };
