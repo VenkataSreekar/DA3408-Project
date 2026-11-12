@@ -59,3 +59,20 @@ stages:
       hash: md5
       md5: 4cd7b0fdc9b8fc29a271c778a94e8748
       size: 726
+  export_model:
+    cmd: python src/training/export_model.py
+    deps:
+    - path: metrics/train_metrics.json
+      hash: md5
+      md5: 4cd7b0fdc9b8fc29a271c778a94e8748
+      size: 726
+    - path: src/training/export_model.py
+      hash: md5
+      md5: 1a2dcbf1f66bfa6595609a1cba87ec0d
+      size: 419
+    outs:
+    - path: model
+      hash: md5
+      md5: 6fd12d1aafc48a26e734ad1c7f5a3ab3.dir
+      size: 731080
+      nfiles: 8
