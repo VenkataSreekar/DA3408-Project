@@ -5,6 +5,10 @@ RUN pip install --no-cache-dir -r requirements-backend.txt
 COPY src/__init__.py src/__init__.py
 COPY src/api src/api
 COPY data/processed/train_stats.json /app/train_stats.json
-ENV TRAIN_STATS_PATH=/app/train_stats.json
+COPY data/processed/spark_metrics.json /app/metrics/spark_metrics.json
+COPY metrics/train_metrics.json /app/metrics/train_metrics.json
+ENV TRAIN_STATS_PATH=/app/train_stats.json \
+    SPARK_METRICS_PATH=/app/metrics/spark_metrics.json \
+    TRAIN_METRICS_PATH=/app/metrics/train_metrics.json
 EXPOSE 8000
 CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

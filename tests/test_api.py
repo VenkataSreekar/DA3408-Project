@@ -115,3 +115,12 @@ def test_metrics_endpoint_exposes_prometheus_counters():
     text = client.get("/metrics").text
     assert "np_requests_total" in text
     assert "np_errors_total" in text
+
+
+def test_pipeline_endpoint_returns_stages_and_service_status(monkeypatch):
+    monkeypatch.setattr(main.requests, "get", lambda *a, **k: FakeResponse(200))
+    body = client.get("/pipeline").json()
+    assert [s["name"] for s in body["stages"]][0] == "Fetch"
+    assert len(body["stages"]) == 6
+    assert body["services"]["status"] == "ok"
+    assert "data" in body and "model" in body

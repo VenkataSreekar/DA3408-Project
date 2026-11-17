@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Next Problem - Pipeline</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto;
+           padding: 0 1rem; color: #1a1a1a; background: #fafafa; }
+    h1 { margin-bottom: .2rem; }
+    h2 { margin-top: 2rem; font-size: 1.15rem; }
+    .sub { color: #555; margin-top: 0; }
+    .msg { padding: .7rem 1rem; border-radius: 6px; margin: 1rem 0;
+           background: #fde8e8; color: #8a1c1c; }
+    .cards { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: .8rem 1rem; }
+    .card h3 { margin: 0 0 .2rem; font-size: 1rem; }
+    .tool { color: #2457c5; font-size: .85rem; margin: 0 0 .4rem; }
+    .what { margin: 0 0 .4rem; font-size: .92rem; }
+    .stat { margin: 0; font-size: .85rem; color: #444; }
+    .dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%;
+           margin-right: .4rem; background: #999; }
+    .up { background: #1f9d55; }
+    .down { background: #c0392b; }
+    .wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: #fff; }
+    th, td { text-align: left; padding: .5rem; border-bottom: 1px solid #e5e5e5; font-size: .95rem; }
+    .badge { display: inline-block; padding: .1rem .6rem; border-radius: 12px; font-size: .85rem; }
+    .pass { background: #d9f2e3; color: #14663a; }
+    .fail { background: #fde8e8; color: #8a1c1c; }
+    a { color: #2457c5; margin-right: 1rem; }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+  <h1>Pipeline status</h1>
+  <p class="sub">How the model behind Next Problem is built, served and monitored.
+     <a href="index.html">Back to the app</a></p>
+
+  <div id="msg" class="msg" hidden></div>
+
+  <h2>Services</h2>
+  <div id="services" class="cards"></div>
+
+  <h2>Pipeline stages</h2>
+  <div id="stages" class="cards"></div>
+
+  <h2>Model results</h2>
+  <div class="wrap">
+    <table>
+      <thead>
+        <tr><th>Model</th><th>Test log loss</th><th>Test AUC</th>
+            <th>Validation log loss</th><th>Validation AUC</th></tr>
+      </thead>
+      <tbody id="results"></tbody>
+    </table>
+  </div>
+  <p id="acceptance"></p>
+  <p id="version" class="stat"></p>
+
+  <h2>Tools</h2>
+  <p id="links"></p>
+
+  <script>
+    const CFG = window.APP_CONFIG || {};
+    const API = CFG.API_URL || "http://localhost:8000";
+    const $ = (id) => document.getElementById(id);
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function fmt(x, digits) {
+      return typeof x === "number" ? x.toFixed(digits) : "n/a";
+    }
+
+    function renderServices(s) {
+      const box = $("services");
+      box.textContent = "";
+      [["Backend (FastAPI)", "up"], ["Model server (MLflow)", s.model_server]].forEach(([name, state]) => {
+        const card = el("div", "card");
+        const h = el("h3");
+        h.appendChild(el("span", "dot " + (state === "up" ? "up" : "down")));
+        h.append(name);
+        card.appendChild(h);
+        card.appendChild(el("p", "stat", state === "up" ? "Running" : "Not reachable"));
+        box.appendChild(card);
+      });
+    }
+
+    function stageStat(name, data, model) {
+      if (name === "Features" && data) {
+        return `${data.rows.toLocaleString()} rows, ${data.contests} contests, ` +
+               `${data.users.toLocaleString()} users, ${Math.round(data.rows_per_second).toLocaleString()} rows/s`;
+      }
+      if (name === "Train" && model) {
+        const c = model.best_model.config;
+        return `Best model: learning rate ${c.learning_rate}, depth ${c.max_depth}, ${c.max_iter} iterations`;
+      }
+      if (name === "Register" && model) {
+        return `Last pipeline run registered version ${model.registered_version}; acceptance ` +
+               (model.beats_baseline ? "passed" : "failed");
+      }
+      return "";
+    }
+
+    function renderStages(stages, data, model) {
+      const box = $("stages");
+      box.textContent = "";
+      stages.forEach((s, i) => {
+        const card = el("div", "card");
+        card.appendChild(el("h3", "", `${i + 1}. ${s.name}`));
+        card.appendChild(el("p", "tool", s.tool));
+        card.appendChild(el("p", "what", s.what));
+        const stat = stageStat(s.name, data, model);
+        if (stat) card.appendChild(el("p", "stat", stat));
+        box.appendChild(card);
+      });
+    }
+
+    function renderResults(model) {
+      const body = $("results");
+      body.textContent = "";
+      if (!model) {
+        body.appendChild(el("tr")).appendChild(el("td", "", "Results are not available."));
+        return;
+      }
+      [["Elo baseline", model.elo_baseline], ["Gradient boosting", model.best_model]].forEach(([name, m]) => {
+        const tr = el("tr");
+        tr.appendChild(el("td", "", name));
+        tr.appendChild(el("td", "", fmt(m.test.log_loss, 4)));
+        tr.appendChild(el("td", "", fmt(m.test.auc, 4)));
+        tr.appendChild(el("td", "", fmt(m.val.log_loss, 4)));
+        tr.appendChild(el("td", "", fmt(m.val.auc, 4)));
+        body.appendChild(tr);
+      });
+      const acc = $("acceptance");
+      acc.textContent = "Acceptance criterion (beat Elo on log loss and AUC): ";
+      acc.appendChild(el("span", "badge " + (model.beats_baseline ? "pass" : "fail"),
+                         model.beats_baseline ? "passed" : "failed"));
+      $("version").textContent =
+        `Code version ${String(model.git_commit).slice(0, 7)} | data version ${String(model.data_md5).slice(0, 8)}`;
+    }
+
+    function renderLinks() {
+      const box = $("links");
+      [["Experiments and models (MLflow)", CFG.MLFLOW_URL],
+       ["Monitoring dashboard (Grafana)", CFG.GRAFANA_URL],
+       ["Metrics (Prometheus)", CFG.PROMETHEUS_URL],
+       ["API documentation", API + "/docs"]].forEach(([text, href]) => {
+        if (!href) return;
+        const a = el("a", "", text);
+        a.href = href;
+        a.target = "_blank";
+        a.rel = "noopener";
+        box.appendChild(a);
+      });
+    }
+
+    async function load() {
+      renderLinks();
+      try {
+        const res = await fetch(`${API}/pipeline`);
+        if (!res.ok) throw new Error("status " + res.status);
+        const body = await res.json();
+        renderServices(body.services);
+        renderStages(body.stages, body.data, body.model);
+        renderResults(body.model);
+      } catch (err) {
+        const m = $("msg");
+        m.textContent = "Cannot reach the backend service, so pipeline details are unavailable.";
+        m.hidden = false;
+      }
+    }
+    load();
+  </script>
+</body>
+</html>

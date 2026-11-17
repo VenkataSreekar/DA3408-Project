@@ -37,6 +37,10 @@ HISTORY_CONTESTS = int(os.getenv("HISTORY_CONTESTS", "60"))  # recent contests u
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 HANDLE_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,24}$")
 BATCH_SIZE = 5000
+TRAIN_METRICS_PATH = os.getenv("TRAIN_METRICS_PATH", "metrics/train_metrics.json")
+SPARK_METRICS_PATH = os.getenv("SPARK_METRICS_PATH", "data/processed/spark_metrics.json")
+TRAIN_METRICS_PATH = os.getenv("TRAIN_METRICS_PATH", "metrics/train_metrics.json")
+SPARK_METRICS_PATH = os.getenv("SPARK_METRICS_PATH", "data/processed/spark_metrics.json")
 
 # ---- Prometheus metrics ----------------------------------------------------
 REQUESTS = Counter("np_requests_total", "HTTP requests", ["endpoint", "status"])
@@ -82,7 +86,7 @@ app = FastAPI(title="Next Problem API", version="1.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["GET"], allow_headers=["*"]
 )
-KNOWN_PATHS = {"/health", "/recommend", "/metrics"}
+KNOWN_PATHS = {"/health", "/recommend", "/metrics", "/pipeline"}
 
 
 @app.middleware("http")
@@ -207,7 +211,7 @@ def recommend(
         {
             "contest_id": p["contestId"],
             "index": p["index"],
-            "name": p.get("name", ""),
+            "name": p.get("name", "").strip(),
             "rating": p["rating"],
             "tags": p.get("tags", []),
             "p_solve": round(pr, 3),
@@ -227,4 +231,72 @@ def recommend(
         "in_zone": len(zone),
         "zone": [low, high],
         "recommendations": recommendations,
+    }
+
+
+# ---- Pipeline status: read-only snapshot for the frontend's pipeline page ----
+STAGES = [
+    {"name": "Fetch", "tool": "Codeforces API + Python",
+     "what": "Downloads contests, standings and rating changes."},
+    {"name": "Features", "tool": "PySpark",
+     "what": "Builds leak-free per-tag history features and a time-based split."},
+    {"name": "Train", "tool": "scikit-learn + MLflow",
+     "what": "Trains an Elo baseline and gradient boosting; every run is tracked."},
+    {"name": "Register", "tool": "MLflow Model Registry + DVC",
+     "what": "Promotes a model to 'champion' only if it beats the Elo baseline."},
+    {"name": "Serve", "tool": "MLflow model server + FastAPI",
+     "what": "Serves solve probabilities over REST; the backend ranks problems."},
+    {"name": "Monitor", "tool": "Prometheus + Grafana",
+     "what": "Tracks latency, errors and feature drift."},
+]
+
+
+def _read_json(path: str):
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return None
+
+
+@app.get("/pipeline")
+def pipeline():
+    return {
+        "services": health(),
+        "stages": STAGES,
+        "data": _read_json(SPARK_METRICS_PATH),
+        "model": _read_json(TRAIN_METRICS_PATH),
+    }
+
+
+# ---- Pipeline status: read-only snapshot for the frontend's pipeline page ----
+STAGES = [
+    {"name": "Fetch", "tool": "Codeforces API + Python",
+     "what": "Downloads contests, standings and rating changes."},
+    {"name": "Features", "tool": "PySpark",
+     "what": "Builds leak-free per-tag history features and a time-based split."},
+    {"name": "Train", "tool": "scikit-learn + MLflow",
+     "what": "Trains an Elo baseline and gradient boosting; every run is tracked."},
+    {"name": "Register", "tool": "MLflow Model Registry + DVC",
+     "what": "Promotes a model to 'champion' only if it beats the Elo baseline."},
+    {"name": "Serve", "tool": "MLflow model server + FastAPI",
+     "what": "Serves solve probabilities over REST; the backend ranks problems."},
+    {"name": "Monitor", "tool": "Prometheus + Grafana",
+     "what": "Tracks latency, errors and feature drift."},
+]
+
+
+def _read_json(path: str):
+    try:
+        return json.loads(Path(path).read_text())
+    except (OSError, ValueError):
+        return None
+
+
+@app.get("/pipeline")
+def pipeline():
+    return {
+        "services": health(),
+        "stages": STAGES,
+        "data": _read_json(SPARK_METRICS_PATH),
+        "model": _read_json(TRAIN_METRICS_PATH),
     }
