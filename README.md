@@ -78,6 +78,8 @@ pytest -v
 
 The suite has 35 tests: live features (10), Elo and metrics (5), API with all error paths and service-health probes (13), and Spark leakage, time-split and data quality checks (7). Codeforces and the model server are faked, so the tests need no network.
 
+With the stack running, `scripts/system_tests.sh` runs the end-to-end system tests: health, real recommendations, error codes, monitoring, a backend restart, and a model-server outage that must fire the `ModelServerDown` alert.
+
 ## Repository layout
 
 ```
@@ -90,7 +92,7 @@ frontend/                           index.html, pipeline.html, config.js
 docker/                             Dockerfiles and backend requirements
 monitoring/                         Prometheus config, alert rules, Grafana provisioning and dashboard
 tests/                              pytest suite
-scripts/                            ci.sh and the git pre-commit hook
+scripts/                            ci.sh, system_tests.sh and the git pre-commit hook
 docs/                               design documents, test report, CI log
 dvc.yaml, dvc.lock                  pipeline definition and lock file
 MLproject, conda.yaml               MLflow project and pinned environment

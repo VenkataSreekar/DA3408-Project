@@ -1,0 +1,52 @@
+System test run: 2026-11-18 22:12:04
+Commit: b7e9204
+SERVICE      STATE     STATUS
+backend      running   Up 6 minutes
+frontend     running   Up 6 minutes
+grafana      running   Up 6 minutes
+model        running   Up 6 minutes (healthy)
+prometheus   running   Up 6 minutes
+
+ST-2  Health check
+  response: {"status":"ok","model_server":"up"}
+  PASS: health ok, model server up
+ST-3  Recommendations for a real user (Venkata_Sreekar)
+  rating 1441, weak tags ['data structures', 'combinatorics', 'graphs'], 559 in zone, 10 returned
+  PASS: 10 problems, all with solve chance in 50-70%, all linked to Codeforces
+ST-4  Unknown handle
+  PASS: 404 for an unknown handle
+ST-5  Invalid handle
+  PASS: 400 for 'ab' (the page also blocks it before sending)
+ST-9  Monitoring records traffic
+  targets: backend=up grafana=up prometheus=up
+  PASS: all three scrape targets up
+  np_service_up: frontend=1 model_server=1
+  PASS: model server and frontend reported up
+  error types seen: handle_not_found invalid_handle
+  PASS: errors by type recorded
+  total requests recorded: 32
+  PASS: drift gauges have values
+ST-6  Backend unavailable
+  PASS: backend unreachable while stopped (the page shows 'Cannot reach the recommendation service')
+  PASS: backend answers again after restart
+ST-14 Outage raises an alert (takes about 2-4 minutes)
+  /health while model is stopped: {"status":"degraded","model_server":"down"}
+  after 15 s: ModelServerDown inactive
+  after 30 s: ModelServerDown pending
+  after 45 s: ModelServerDown pending
+  after 60 s: ModelServerDown pending
+  after 75 s: ModelServerDown pending
+  after 90 s: ModelServerDown firing
+  PASS: ModelServerDown fired
+  cleared 30 s after restart
+  PASS: alert cleared after the model server restarted
+  /health now: {"status":"ok","model_server":"up"}
+
+RESULT: 12 checks passed, 0 failed
+
+Quick manual checks in the browser (http://localhost:8080):
+  ST-3  search Venkata_Sreekar: weak topics and a table appear; a problem name opens Codeforces
+  ST-4  search zzz_nobody_here_987: 'Handle ... was not found on Codeforces.'
+  ST-5  search ab: invalid-handle message appears immediately
+  ST-6  run 'docker compose stop backend', search: 'Cannot reach the recommendation service...'; then 'docker compose start backend'
+  ST-9  Grafana (http://localhost:3001/d/next-problem): request count, errors by type, drift, Service status all UP

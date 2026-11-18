@@ -55,11 +55,11 @@ Testing has three levels: 35 automated tests for code correctness, a model accep
 
 1. **On every commit:** a Git pre-commit hook runs `pytest -q`, and a failing test blocks the commit.
 2. **On demand:** `scripts/ci.sh` runs the tests, `dvc repro`, the metrics and the acceptance gate.
-3. **Before submission:** the system test cases in section 4, on a fresh `docker compose up -d`.
+3. **Before submission:** the system test cases in section 4, on a fresh `docker compose up -d`; most are automated by `scripts/system_tests.sh`.
 
 ## 2. Acceptance criteria
 
-The system is accepted when all ten criteria below hold. AC-1 to AC-7 and AC-9 are met; AC-8 and AC-10 depend on the system tests in section 4.
+The system is accepted when all ten criteria below hold. All ten are met.
 
 | ID | Criterion | Evidence | Result |
 | --- | --- | --- | --- |
@@ -70,9 +70,9 @@ The system is accepted when all ten criteria below hold. AC-1 to AC-7 and AC-9 a
 | AC-5 | No feature uses information from its own or a later contest | T-S1, T-S2, T-S4 | Pass |
 | AC-6 | Every invalid input and every failed dependency returns its documented HTTP code and a readable message | T-A3 to T-A8 | Pass |
 | AC-7 | A model gets the `champion` alias only if AC-2 and AC-3 hold | `train.py` gate; CI step 4 printed ACCEPTANCE PASSED | Pass |
-| AC-8 | The deployed system serves recommendations for a real rated handle, and monitoring records the traffic | System tests ST-1 to ST-9 | See section 4 |
+| AC-8 | The deployed system serves recommendations for a real rated handle, and monitoring records the traffic | System tests ST-1 to ST-9 | Pass |
 | AC-9 | The training data passes every data quality check, and a failed check stops the pipeline | T-S6, T-S7; 11 of 11 checks in `spark_metrics.json` | Pass |
-| AC-10 | Every component is monitored, and an outage raises an alert | T-A13; ST-13, ST-14 | See section 4 |
+| AC-10 | Every component is monitored, and an outage raises an alert | T-A13; ST-13, ST-14 | Pass |
 
 AC-2 and AC-3 are checked twice: by `train.py`, before it sets the `champion` alias, and by `scripts/ci.sh`, which exits with an error if `beats_baseline` is false.
 
@@ -141,30 +141,41 @@ Hand-made data: one user plays contest 1 (problems A solved and B unsolved, both
 
 ## 4. System test cases
 
-These checks run on the deployed stack after `docker compose up -d`. Seven have been run and passed. The other seven are marked Not run: do them on the final stack before submission and set the Result column.
+These checks run on the deployed stack after `docker compose up -d`. All 15 have been run and passed. ST-2 to ST-6, ST-9 and ST-14 are automated by `scripts/system_tests.sh`; the page-level parts of ST-3 to ST-6 are quick manual checks in the browser.
 
 | ID | Case | Steps | Expected | Result |
 | --- | --- | --- | --- | --- |
 | ST-1 | Stack starts | `docker compose up -d`, then `docker compose ps` | 5 services Up; model server healthy | Pass |
-| ST-2 | Health check | `curl localhost:8000/health` | `{"status":"ok","model_server":"up"}` | Not run |
-| ST-3 | Recommendations for a real user | Open http://localhost:8080, enter `Venkata_Sreekar`, press Get problems | Weakest topics and up to 10 problems, each with solve chance from 50% to 70%; names open the problem on Codeforces | Not run |
-| ST-4 | Unknown handle | Enter `zzz_nobody_here_987` | Message: the handle was not found on Codeforces | Not run |
-| ST-5 | Invalid handle | Enter `ab` | Message at once, without a request: invalid handle, use 3-24 letters, digits, '\_', '-' or '.' | Not run |
-| ST-6 | Backend unavailable | `docker compose stop backend`, search again, then `docker compose start backend` | Message: cannot reach the recommendation service; works again after restart | Not run |
+| ST-2 | Health check | `curl localhost:8000/health` | `{"status":"ok","model_server":"up"}` | Pass |
+| ST-3 | Recommendations for a real user | Open http://localhost:8080, enter `Venkata_Sreekar`, press Get problems | Weakest topics and up to 10 problems, each with solve chance from 50% to 70%; names open the problem on Codeforces | Pass |
+| ST-4 | Unknown handle | Enter `zzz_nobody_here_987` | Message: the handle was not found on Codeforces | Pass |
+| ST-5 | Invalid handle | Enter `ab` | Message at once, without a request: invalid handle, use 3-24 letters, digits, '\_', '-' or '.' | Pass |
+| ST-6 | Backend unavailable | `docker compose stop backend`, search again, then `docker compose start backend` | Message: cannot reach the recommendation service; works again after restart | Pass |
 | ST-7 | Pipeline status page | Open http://localhost:8080/pipeline.html | Service cards, six stage cards with real numbers, Elo vs model table | Pass |
 | ST-8 | API documentation | Open http://localhost:8000/docs | `/health`, `/metrics`, `/recommend`, `/pipeline` each listed once | Pass |
-| ST-9 | Monitoring records traffic | Run ST-3 and ST-4, and `curl "localhost:8000/recommend?handle=ab"`; wait 30 s; open Grafana (http://localhost:3001) and Prometheus targets (http://localhost:9090/targets) | Request count rises; errors by type show `handle_not_found` and `invalid_handle`; drift panels have values; targets backend, prometheus and grafana all UP; service status shows model_server and frontend UP | Not run |
+| ST-9 | Monitoring records traffic | Run ST-3 and ST-4, and `curl "localhost:8000/recommend?handle=ab"`; wait 30 s; open Grafana (http://localhost:3001) and Prometheus targets (http://localhost:9090/targets) | Request count rises; errors by type show `handle_not_found` and `invalid_handle`; drift panels have values; targets backend, prometheus and grafana all UP; service status shows model_server and frontend UP | Pass |
 | ST-10 | CI pipeline | `scripts/ci.sh` | Tests pass, DVC stages skipped or rerun, ACCEPTANCE PASSED, CI passed | Pass |
 | ST-11 | Reproducible training | `mlflow run . -e train --env-manager local` | Same test metrics as `dvc repro` (log loss 0.22121, AUC 0.96762) | Pass |
 | ST-12 | Tests run on commit | `git commit` | Pre-commit hook runs pytest before the commit is recorded | Pass |
 | ST-13 | Alert rules load | `docker compose exec prometheus promtool check rules /etc/prometheus/alert_rules.yml` | `SUCCESS: 7 rules found` | Pass |
-| ST-14 | Outage raises an alert | `docker compose stop model`; wait 2 minutes; check http://localhost:9090/alerts and the Grafana *Alerts firing* panel; `docker compose start model` | `ModelServerDown` firing; *Alerts firing* at least 1; clears after the restart | Not run |
+| ST-14 | Outage raises an alert | `docker compose stop model`; wait 2 minutes; check http://localhost:9090/alerts and the Grafana *Alerts firing* panel; `docker compose start model` | `ModelServerDown` firing; *Alerts firing* at least 1; clears after the restart | Pass |
+| ST-15 | Fresh clone works | `git clone` the repository into a new folder, `dvc pull`, `pytest -q`, `docker compose up -d --build` | All data and the model fetched from the DVC remote; 35 tests pass; all five services start | Pass |
 
-Evidence for the passed cases: ST-1 and ST-13 were run after rebuilding the stack on 2026-11-18 (all five containers started, model server healthy; promtool printed `SUCCESS: 7 rules found`). ST-10 is saved in `docs/ci_run.txt`: 35 tests passed, all 11 data quality checks passed, the model was retrained as registry version 4, and acceptance passed. ST-11 gave identical numbers in registry versions 2, 3 and 4. For ST-12, the pre-commit hook ran the test suite before each commit (for example commit `3bc6821`).
+Evidence:
+
+- **`docs/system_test_run.txt`** (2026-11-18, commit `b7e9204`): 12 of 12 automated checks passed.
+    - ST-3 returned 10 problems for a user rated 1441, all between 50% and 70%, with weakest topics *data structures*, *combinatorics* and *graphs* (559 problems in the zone).
+    - ST-9 showed all three scrape targets up, `np_service_up` 1 for the model server and frontend, and the error types `handle_not_found` and `invalid_handle` recorded.
+    - In ST-14, `ModelServerDown` was pending after 30 s and firing after 90 s, and cleared 30 s after the model server restarted. While it was down, `/health` reported `degraded`.
+- **ST-1 and ST-13:** after rebuilding the stack, all five containers started and the model server was healthy; promtool printed `SUCCESS: 7 rules found`.
+- **ST-10:** `docs/ci_run.txt`. 35 tests passed, all 11 data quality checks passed, the model was retrained as registry version 4, and acceptance passed.
+- **ST-11:** identical numbers in registry versions 2, 3 and 4.
+- **ST-12:** the pre-commit hook ran the test suite before each commit.
+- **ST-15:** a fresh clone in `/tmp/np-clean` fetched 188 files with `dvc pull`, passed 35 tests and started all five services.
 
 ## 5. Test report
 
-All 35 automated tests passed with 0 failures, and the model passed both acceptance metrics. Seven of the fourteen system test cases have passed so far, none failed, and seven remain to be run.
+All 35 automated tests passed with 0 failures, and the model passed both acceptance metrics. All 15 system test cases passed, and all ten acceptance criteria are met.
 
 **Run details:** 2026-11-18, Python 3.10.22, pytest 9.2.0, PySpark 3.5.1; the suite took 25.3 s. On the real data, all 11 data quality checks passed (339,576 rows).
 
@@ -179,7 +190,7 @@ All 35 automated tests passed with 0 failures, and the model passed both accepta
 | **Automated total** | **35** | **35** | **0** | **0** |
 | Model acceptance (AC-2, AC-3) | 2 | 2 | 0 | 0 |
 | Data quality checks on the real data | 11 | 11 | 0 | 0 |
-| System (section 4) | 14 | 7 | 0 | 7 |
+| System (section 4) | 15 | 15 | 0 | 0 |
 
 Update the system row once the remaining cases are run.
 
@@ -214,6 +225,7 @@ One warning appears on every run: Starlette's test client says using `httpx` is 
 | `docs/test_report.xml` | The same results in JUnit XML format |
 | `docs/ci_run.txt` | A full CI run: tests, `dvc repro`, DAG, metrics, acceptance gate |
 | `data/processed/spark_metrics.json` | Results of the 11 data quality checks on the real data |
+| `docs/system_test_run.txt` | Output of `scripts/system_tests.sh`: the automated system tests |
 | `metrics/train_metrics.json` | Model and Elo scores used in 5.2 |
 
 To reproduce: `pytest -v` from the repository root, or `scripts/ci.sh` for the full CI.
