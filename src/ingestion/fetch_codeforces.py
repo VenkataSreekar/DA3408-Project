@@ -6,8 +6,9 @@ Usage:
 Notes:
 - Idempotent: files that already exist are skipped, so re-running resumes.
 - Polite: sleeps between calls (Codeforces allows ~1 request / 2 s).
-- Standings are the top `--users` ranked participants per contest, so the
-  sample is biased toward stronger users. Mention this in the design doc.
+- Users are a stable ~10% cohort chosen by hashing the handle (crc32 % 10 == 0),
+  so the same users appear across contests and all skill levels are covered.
+  At most `--users` cohort members are kept per contest.
 """
 import argparse
 import json

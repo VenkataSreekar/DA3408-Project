@@ -6,8 +6,8 @@ stages:
     deps:
     - path: src/ingestion/fetch_codeforces.py
       hash: md5
-      md5: 3dab51b8c377626239937e648e50c4e6
-      size: 4734
+      md5: 0eb8e2972da4f6f605389f15557e1415
+      size: 4801
     outs:
     - path: data/raw
       hash: md5

@@ -5,34 +5,35 @@ rootdir: /home/sreekar/Documents/Academics/Sem-5/AI Ops/Project/next-problem
 configfile: pytest.ini
 testpaths: tests
 plugins: platformdirs-4.12.4, hydra-core-1.3.8, anyio-4.15.1
-collecting ... collected 31 items
+collecting ... collected 32 items
 
 tests/test_api.py::test_health_reports_ok_when_model_server_is_up PASSED [  3%]
 tests/test_api.py::test_health_reports_degraded_when_model_server_is_down PASSED [  6%]
 tests/test_api.py::test_invalid_handle_returns_400 PASSED                [  9%]
 tests/test_api.py::test_bad_probability_zone_returns_400 PASSED          [ 12%]
-tests/test_api.py::test_unknown_handle_returns_404 PASSED                [ 16%]
-tests/test_api.py::test_unrated_user_returns_422 PASSED                  [ 19%]
-tests/test_api.py::test_codeforces_outage_returns_502 PASSED             [ 22%]
+tests/test_api.py::test_unknown_handle_returns_404 PASSED                [ 15%]
+tests/test_api.py::test_unrated_user_returns_422 PASSED                  [ 18%]
+tests/test_api.py::test_codeforces_outage_returns_502 PASSED             [ 21%]
 tests/test_api.py::test_model_server_outage_returns_503 PASSED           [ 25%]
-tests/test_api.py::test_recommendations_are_in_zone_and_ranked_by_weakness PASSED [ 29%]
-tests/test_api.py::test_k_limits_the_number_of_results PASSED            [ 32%]
-tests/test_api.py::test_metrics_endpoint_exposes_prometheus_counters PASSED [ 35%]
-tests/test_features.py::test_untagged_problem_gets_none_tag PASSED       [ 38%]
-tests/test_features.py::test_index_problems_drops_unrated_and_contestless PASSED [ 41%]
-tests/test_features.py::test_solved_sets_separates_contest_and_practice PASSED [ 45%]
-tests/test_features.py::test_tag_history_counts_only_the_given_contests PASSED [ 48%]
-tests/test_features.py::test_smoothed_rate_without_and_with_history PASSED [ 51%]
-tests/test_features.py::test_build_row_single_tag PASSED                 [ 54%]
-tests/test_features.py::test_build_row_multiple_tags PASSED              [ 58%]
-tests/test_features.py::test_weakness_is_zero_for_untagged_problems PASSED [ 61%]
-tests/test_features.py::test_weakness_is_higher_for_weaker_topic PASSED  [ 64%]
-tests/test_features.py::test_weak_tags_requires_minimum_attempts PASSED  [ 67%]
-tests/test_model_utils.py::test_elo_equal_rating_is_fifty_percent PASSED [ 70%]
-tests/test_model_utils.py::test_elo_400_points_above_is_about_91_percent PASSED [ 74%]
-tests/test_model_utils.py::test_elo_decreases_as_problems_get_harder PASSED [ 77%]
-tests/test_model_utils.py::test_score_on_a_perfect_ranking PASSED        [ 80%]
-tests/test_model_utils.py::test_feature_columns_are_identical_in_spark_training_and_api PASSED [ 83%]
+tests/test_api.py::test_recommendations_are_in_zone_and_ranked_by_weakness PASSED [ 28%]
+tests/test_api.py::test_k_limits_the_number_of_results PASSED            [ 31%]
+tests/test_api.py::test_metrics_endpoint_exposes_prometheus_counters PASSED [ 34%]
+tests/test_api.py::test_pipeline_endpoint_returns_stages_and_service_status PASSED [ 37%]
+tests/test_features.py::test_untagged_problem_gets_none_tag PASSED       [ 40%]
+tests/test_features.py::test_index_problems_drops_unrated_and_contestless PASSED [ 43%]
+tests/test_features.py::test_solved_sets_separates_contest_and_practice PASSED [ 46%]
+tests/test_features.py::test_tag_history_counts_only_the_given_contests PASSED [ 50%]
+tests/test_features.py::test_smoothed_rate_without_and_with_history PASSED [ 53%]
+tests/test_features.py::test_build_row_single_tag PASSED                 [ 56%]
+tests/test_features.py::test_build_row_multiple_tags PASSED              [ 59%]
+tests/test_features.py::test_weakness_is_zero_for_untagged_problems PASSED [ 62%]
+tests/test_features.py::test_weakness_is_higher_for_weaker_topic PASSED  [ 65%]
+tests/test_features.py::test_weak_tags_requires_minimum_attempts PASSED  [ 68%]
+tests/test_model_utils.py::test_elo_equal_rating_is_fifty_percent PASSED [ 71%]
+tests/test_model_utils.py::test_elo_400_points_above_is_about_91_percent PASSED [ 75%]
+tests/test_model_utils.py::test_elo_decreases_as_problems_get_harder PASSED [ 78%]
+tests/test_model_utils.py::test_score_on_a_perfect_ranking PASSED        [ 81%]
+tests/test_model_utils.py::test_feature_columns_are_identical_in_spark_training_and_api PASSED [ 84%]
 tests/test_spark_features.py::test_first_contest_has_no_history PASSED   [ 87%]
 tests/test_spark_features.py::test_history_uses_only_strictly_earlier_contests PASSED [ 90%]
 tests/test_spark_features.py::test_multi_tag_problem_averages_tag_rates PASSED [ 93%]
@@ -46,4 +47,4 @@ tests/test_spark_features.py::test_time_split_is_ordered_and_contests_never_stra
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 - generated xml file: /home/sreekar/Documents/Academics/Sem-5/AI Ops/Project/next-problem/docs/test_report.xml -
-======================== 31 passed, 1 warning in 25.81s ========================
+================== 32 passed, 1 warning in 408.46s (0:06:48) ===================

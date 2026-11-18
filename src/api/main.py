@@ -7,6 +7,7 @@ Endpoints:
     GET /health                      liveness + model-server status
     GET /recommend?handle=...        ranked "stretch zone" problems for a user
     GET /metrics                     Prometheus metrics
+    GET /pipeline                    pipeline stages, latest data/model metrics, service status
 
 The backend never loads the model. It calls the MLflow model server over REST
 (MODEL_URL), so the frontend, backend and model server stay loosely coupled.
@@ -37,8 +38,6 @@ HISTORY_CONTESTS = int(os.getenv("HISTORY_CONTESTS", "60"))  # recent contests u
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 HANDLE_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,24}$")
 BATCH_SIZE = 5000
-TRAIN_METRICS_PATH = os.getenv("TRAIN_METRICS_PATH", "metrics/train_metrics.json")
-SPARK_METRICS_PATH = os.getenv("SPARK_METRICS_PATH", "data/processed/spark_metrics.json")
 TRAIN_METRICS_PATH = os.getenv("TRAIN_METRICS_PATH", "metrics/train_metrics.json")
 SPARK_METRICS_PATH = os.getenv("SPARK_METRICS_PATH", "data/processed/spark_metrics.json")
 
@@ -200,7 +199,6 @@ def recommend(
         raise HTTPException(503, "The model service is unavailable. Try again later.")
 
     # 4. Keep the stretch zone, rank by weakest topics (then closeness to 60%).
-        # 4. Keep the stretch zone, rank by weakest topics (then closeness to 60%).
     zone = [
         (p, pr, features.weakness(p, n, s))
         for p, pr in zip(candidates, probs) if low <= pr <= high
@@ -231,40 +229,6 @@ def recommend(
         "in_zone": len(zone),
         "zone": [low, high],
         "recommendations": recommendations,
-    }
-
-
-# ---- Pipeline status: read-only snapshot for the frontend's pipeline page ----
-STAGES = [
-    {"name": "Fetch", "tool": "Codeforces API + Python",
-     "what": "Downloads contests, standings and rating changes."},
-    {"name": "Features", "tool": "PySpark",
-     "what": "Builds leak-free per-tag history features and a time-based split."},
-    {"name": "Train", "tool": "scikit-learn + MLflow",
-     "what": "Trains an Elo baseline and gradient boosting; every run is tracked."},
-    {"name": "Register", "tool": "MLflow Model Registry + DVC",
-     "what": "Promotes a model to 'champion' only if it beats the Elo baseline."},
-    {"name": "Serve", "tool": "MLflow model server + FastAPI",
-     "what": "Serves solve probabilities over REST; the backend ranks problems."},
-    {"name": "Monitor", "tool": "Prometheus + Grafana",
-     "what": "Tracks latency, errors and feature drift."},
-]
-
-
-def _read_json(path: str):
-    try:
-        return json.loads(Path(path).read_text())
-    except (OSError, ValueError):
-        return None
-
-
-@app.get("/pipeline")
-def pipeline():
-    return {
-        "services": health(),
-        "stages": STAGES,
-        "data": _read_json(SPARK_METRICS_PATH),
-        "model": _read_json(TRAIN_METRICS_PATH),
     }
 
 

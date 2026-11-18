@@ -1,36 +1,54 @@
 ==> 1/4 Unit tests
-...............................                                          [100%]
+................................                                         [100%]
 =============================== warnings summary ===============================
 ../../../../../../miniconda3/envs/nextproblem/lib/python3.10/site-packages/fastapi/testclient.py:1
   /home/sreekar/miniconda3/envs/nextproblem/lib/python3.10/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-31 passed, 1 warning in 22.20s
+32 passed, 1 warning in 17.40s
 ==> 2/4 Reproduce the DVC pipeline (dvc repro)
-Stage 'fetch' didn't change, skipping
+Running stage 'fetch':
+> python src/ingestion/fetch_codeforces.py --n-contests 70 --users 1500 --out data/raw
+2026-11-18 21:07:00,042 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:07:05,992 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:07:15,392 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:07:32,846 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:07:44,860 INFO Contest 2215 has no rating changes, skipping
+2026-11-18 21:07:48,367 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:07:54,617 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:08:05,674 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:08:18,833 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
+2026-11-18 21:08:30,839 INFO Contest 2216 has no rating changes, skipping
+2026-11-18 21:08:30,841 INFO Finished: 70 contests in data/raw
+Updating lock file 'dvc.lock'
+
 Stage 'features' didn't change, skipping
 Stage 'train' didn't change, skipping
-Data and pipelines are up to date.
+Stage 'export_model' didn't change, skipping
+Use `dvc push` to send your updates to remote storage.
 ==> 3/4 Pipeline graph and metrics
-+-----------+  
-| model.dvc |  
-+-----------+  
-  +-------+  
-  | fetch |  
-  +-------+  
-      *      
-      *      
-      *      
-+----------+ 
-| features | 
-+----------+ 
-      *      
-      *      
-      *      
-  +-------+  
-  | train |  
-  +-------+  
+    +-------+    
+    | fetch |    
+    +-------+    
+        *        
+        *        
+        *        
+  +----------+   
+  | features |   
+  +----------+   
+        *        
+        *        
+        *        
+    +-------+    
+    | train |    
+    +-------+    
+        *        
+        *        
+        *        
++--------------+ 
+| export_model | 
++--------------+ 
 Path                               beats_baseline    best_model.config.learning_rate    best_model.config.max_depth    best_model.config.max_iter    best_model.run_id                 best_model.test.auc    best_model.test.log_loss    best_model.val.auc    best_model.val.log_loss    contests    data_md5                              elapsed_seconds    elo_baseline.test.auc    elo_baseline.test.log_loss    elo_baseline.val.auc    elo_baseline.val.log_loss    git_commit                                label_rate    registered_version    rows    rows_per_second    split_rows.test    split_rows.train    split_rows.val    users
 data/processed/spark_metrics.json  -                 -                                  -                              -                             -                                 -                      -                           -                     -                          68          -                                     31.14              -                        -                             -                       -                            -                                         0.35606       -                     339576  10903.5            31820              263522              44234             10270
 metrics/train_metrics.json         True              0.05                               6                              200                           1ba5e0784ef3486589d198e8d972f183  0.96762                0.22121                     0.9701                0.21507                    -           6ba9e0da3d90219c9f67f3022b7b2ea7.dir  -                  0.96459                  0.24179                       0.96854                 0.23227                      1c8c823a11430fcf78ef7635a35566d46730527a  -             2                     -       -                  -                  -                   -                 -
