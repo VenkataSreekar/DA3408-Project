@@ -14,3 +14,4 @@ metastore_db
 derby.log
 .ipynb_checkpoints
 /model
+docs_input.zip
