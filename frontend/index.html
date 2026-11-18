@@ -148,6 +148,11 @@
         showMsg("error", "Please enter a Codeforces handle.");
         return;
       }
+      // Same rule as the backend, so a typo is caught before any request is sent.
+      if (!/^[A-Za-z0-9_.\-]{3,24}$/.test(handle)) {
+        showMsg("error", "Invalid handle: use 3-24 letters, digits, '_', '-' or '.'.");
+        return;
+      }
       $("go").disabled = true;
       $("results").hidden = true;
       showMsg("info",

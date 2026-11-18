@@ -1,0 +1,58 @@
+groups:
+  - name: next-problem
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Backend is not answering Prometheus scrapes"
+
+      - alert: ModelServerDown
+        expr: np_service_up{service="model_server"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Model server health check is failing; /recommend returns 503"
+
+      - alert: FrontendDown
+        expr: np_service_up{service="frontend"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Frontend (Apache httpd) is not answering"
+
+      - alert: MonitoringTargetDown
+        expr: up{job=~"prometheus|grafana"} == 0
+        for: 2m
+        labels: {severity: warning}
+        annotations:
+          summary: "{{ $labels.job }} is not answering scrapes"
+
+      - alert: HighServerErrorRate
+        # Share of /recommend requests failing with 5xx (Codeforces or model server down).
+        # 4xx errors are user input problems and are excluded.
+        expr: |
+          sum(rate(np_requests_total{endpoint="/recommend", status=~"5.."}[5m]))
+            / sum(rate(np_requests_total{endpoint="/recommend"}[5m])) > 0.2
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "More than 20% of /recommend requests fail with a server error"
+
+      - alert: SlowRecommendations
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(np_request_latency_seconds_bucket{endpoint="/recommend"}[5m]))) > 20
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "p95 latency of /recommend is above 20 s"
+
+      - alert: FeatureDrift
+        # Live mean of a feature differs from its training mean by more than 50%.
+        expr: abs(np_feature_mean_shift) > 0.5
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Input drift on {{ $labels.feature }}: consider retraining"

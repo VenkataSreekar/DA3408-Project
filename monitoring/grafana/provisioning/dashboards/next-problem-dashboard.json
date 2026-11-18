@@ -1,137 +1,653 @@
 {
   "uid": "next-problem",
   "title": "Next Problem - Monitoring",
-  "tags": ["next-problem"],
+  "tags": [
+    "next-problem"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "15s",
-  "time": {"from": "now-30m", "to": "now"},
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
   "editable": true,
-  "templating": {"list": []},
-  "annotations": {"list": []},
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
   "panels": [
     {
-      "id": 1, "type": "stat", "title": "Backend",
-      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "up{job=\"backend\"}"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "textMode": "value"},
+      "id": 1,
+      "type": "stat",
+      "title": "Backend",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=\"backend\"}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "textMode": "value"
+      },
       "fieldConfig": {
         "defaults": {
-          "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}],
-          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       }
     },
     {
-      "id": 2, "type": "stat", "title": "Recommend requests (total)",
-      "gridPos": {"h": 4, "w": 5, "x": 4, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "sum(np_requests_total{endpoint=\"/recommend\"}) or vector(0)"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
-      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0}, "overrides": []}
-    },
-    {
-      "id": 3, "type": "stat", "title": "Error responses, last 1h (4xx/5xx)",
-      "gridPos": {"h": 4, "w": 5, "x": 9, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "sum(increase(np_requests_total{endpoint=\"/recommend\",status=~\"4..|5..\"}[1h])) or vector(0)"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "id": 2,
+      "type": "stat",
+      "title": "Recommend requests (total)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(np_requests_total{endpoint=\"/recommend\"}) or vector(0)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
       "fieldConfig": {
         "defaults": {
-          "unit": "none", "decimals": 0,
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 10}]}
+          "unit": "none",
+          "decimals": 0
         },
         "overrides": []
       }
     },
     {
-      "id": 4, "type": "stat", "title": "p95 latency /recommend (5m)",
-      "gridPos": {"h": 4, "w": 5, "x": 14, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "id": 3,
+      "type": "stat",
+      "title": "Error responses, last 1h (4xx/5xx)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(increase(np_requests_total{endpoint=\"/recommend\",status=~\"4..|5..\"}[1h])) or vector(0)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 10
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "p95 latency /recommend (5m)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 15}, {"color": "red", "value": 30}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 15
+              },
+              {
+                "color": "red",
+                "value": 30
+              }
+            ]
+          }
         },
         "overrides": []
       }
     },
     {
-      "id": 5, "type": "stat", "title": "Rating drift (vs training mean)",
-      "gridPos": {"h": 4, "w": 5, "x": 19, "y": 0},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "np_feature_mean_shift{feature=\"rating\"}"}],
-      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "id": 5,
+      "type": "stat",
+      "title": "Rating drift (vs training mean)",
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "np_feature_mean_shift{feature=\"rating\"}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value"
+      },
       "fieldConfig": {
         "defaults": {
           "unit": "percentunit",
-          "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.5}, {"color": "red", "value": 1}]}
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.5
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       }
     },
     {
-      "id": 6, "type": "timeseries", "title": "Request rate by endpoint and status",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "sum by (endpoint, status) (rate(np_requests_total[2m]))", "legendFormat": "{{endpoint}} {{status}}"}],
-      "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []}
-    },
-    {
-      "id": 7, "type": "timeseries", "title": "Latency /recommend (p50 and p95)",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "id": 6,
+      "type": "timeseries",
+      "title": "Request rate by endpoint and status",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "histogram_quantile(0.50, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))", "legendFormat": "p50"},
-        {"refId": "B", "expr": "histogram_quantile(0.95, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))", "legendFormat": "p95"}
+        {
+          "refId": "A",
+          "expr": "sum by (endpoint, status) (rate(np_requests_total[2m]))",
+          "legendFormat": "{{endpoint}} {{status}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      }
     },
     {
-      "id": 8, "type": "timeseries", "title": "Errors by type (per 5 min)",
-      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "sum by (type) (increase(np_errors_total[5m]))", "legendFormat": "{{type}}"}],
-      "fieldConfig": {"defaults": {"unit": "none", "decimals": 0}, "overrides": []}
-    },
-    {
-      "id": 9, "type": "timeseries", "title": "Model server latency (p95)",
-      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "histogram_quantile(0.95, sum by (le) (rate(np_model_latency_seconds_bucket[5m])))", "legendFormat": "p95"}],
-      "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []}
-    },
-    {
-      "id": 10, "type": "timeseries", "title": "Feature drift: shift vs training mean",
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "targets": [{"refId": "A", "expr": "np_feature_mean_shift", "legendFormat": "{{feature}}"}],
-      "fieldConfig": {"defaults": {"unit": "percentunit"}, "overrides": []}
-    },
-    {
-      "id": 11, "type": "timeseries", "title": "Rating: live mean vs training mean",
-      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "id": 7,
+      "type": "timeseries",
+      "title": "Latency /recommend (p50 and p95)",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "np_live_feature_mean{feature=\"rating\"}", "legendFormat": "live"},
-        {"refId": "B", "expr": "np_train_feature_mean{feature=\"rating\"}", "legendFormat": "training"}
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))",
+          "legendFormat": "p50"
+        },
+        {
+          "refId": "B",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(np_request_latency_seconds_bucket{endpoint=\"/recommend\"}[5m])))",
+          "legendFormat": "p95"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
     },
     {
-      "id": 12, "type": "timeseries", "title": "Previous contests: live mean vs training mean",
-      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
-      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "id": 8,
+      "type": "timeseries",
+      "title": "Errors by type (per 5 min)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
       "targets": [
-        {"refId": "A", "expr": "np_live_feature_mean{feature=\"n_prev_contests\"}", "legendFormat": "live"},
-        {"refId": "B", "expr": "np_train_feature_mean{feature=\"n_prev_contests\"}", "legendFormat": "training"}
+        {
+          "refId": "A",
+          "expr": "sum by (type) (increase(np_errors_total[5m]))",
+          "legendFormat": "{{type}}"
+        }
       ],
-      "fieldConfig": {"defaults": {"unit": "none"}, "overrides": []}
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Model server latency (p95)",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 8,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(np_model_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Feature drift: shift vs training mean",
+      "gridPos": {
+        "h": 8,
+        "w": 8,
+        "x": 16,
+        "y": 12
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "np_feature_mean_shift",
+          "legendFormat": "{{feature}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Rating: live mean vs training mean",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "np_live_feature_mean{feature=\"rating\"}",
+          "legendFormat": "live"
+        },
+        {
+          "refId": "B",
+          "expr": "np_train_feature_mean{feature=\"rating\"}",
+          "legendFormat": "training"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Previous contests: live mean vs training mean",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "np_live_feature_mean{feature=\"n_prev_contests\"}",
+          "legendFormat": "live"
+        },
+        {
+          "refId": "B",
+          "expr": "np_train_feature_mean{feature=\"n_prev_contests\"}",
+          "legendFormat": "training"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "stat",
+      "title": "Service status (all components)",
+      "gridPos": {
+        "h": 5,
+        "w": 16,
+        "x": 0,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up",
+          "legendFormat": "{{job}}"
+        },
+        {
+          "refId": "B",
+          "expr": "np_service_up",
+          "legendFormat": "{{service}}"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "textMode": "value_and_name",
+        "orientation": "vertical"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "DOWN",
+                  "color": "red"
+                },
+                "1": {
+                  "text": "UP",
+                  "color": "green"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 14,
+      "type": "stat",
+      "title": "Alerts firing",
+      "gridPos": {
+        "h": 5,
+        "w": 8,
+        "x": 16,
+        "y": 28
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "count(ALERTS{alertstate=\"firing\"}) or vector(0)"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "background",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 15,
+      "type": "table",
+      "title": "Firing alerts",
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "instant": true,
+          "format": "table"
+        }
+      ],
+      "options": {
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Value": true,
+              "__name__": true,
+              "alertstate": true
+            }
+          }
+        }
+      ]
     }
   ]
 }

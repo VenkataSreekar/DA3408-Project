@@ -1,7 +1,24 @@
 global:
   scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Alert rules: firing alerts appear at http://localhost:9090/alerts and on the Grafana dashboard.
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
 scrape_configs:
+  # FastAPI backend: requests, latency, errors, drift, and the health of the
+  # model server and frontend (np_service_up), which it probes on every scrape.
   - job_name: backend
     metrics_path: /metrics
     static_configs:
       - targets: ["backend:8000"]
+
+  # The monitoring stack watches itself.
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]

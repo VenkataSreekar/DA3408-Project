@@ -8,7 +8,9 @@ So for contest 2, the dp history is 2 attempts / 1 solve, and math has none.
 import pytest
 from pyspark.sql import SparkSession
 
-from src.features.spark_features import add_time_split, build_features
+from src.features.spark_features import (
+    FEATURE_COLS, add_time_split, build_features, quality_checks,
+)
 
 SCHEMA = (
     "contest_id long, start long, handle string, rating long, prob_index string, "
@@ -83,3 +85,39 @@ def test_time_split_is_ordered_and_contests_never_straddle(spark):
     assert set(by_split) == {"train", "val", "test"}
     assert max(by_split["train"]) < min(by_split["val"])
     assert max(by_split["val"]) < min(by_split["test"])
+
+
+def feature_table(spark, overrides=()):
+    """A tiny valid feature table: one contest per split, two users each."""
+    rows = []
+    for cid, split in [(1, "train"), (2, "val"), (3, "test")]:
+        for handle, label in [("u1", 1), ("u2", 0)]:
+            row = {"contest_id": cid, "handle": handle, "prob_index": "A", "label": label,
+                   "split": split, "rating": 1500.0, "difficulty": 1400.0, "rating_diff": 100.0,
+                   "tag_rate_mean": 0.4, "tag_rate_min": 0.3, "tag_experience": 2.0,
+                   "n_tags": 1.0, "n_prev_contests": float(cid - 1)}
+            rows.append(row)
+    for i, change in overrides:
+        rows[i].update(change)
+    cols = ["contest_id", "handle", "prob_index", "label", "split"] + FEATURE_COLS
+    schema = ("contest_id long, handle string, prob_index string, label int, split string, "
+              + ", ".join(f"{c} double" for c in FEATURE_COLS))
+    return spark.createDataFrame([tuple(r[c] for c in cols) for r in rows], schema)
+
+
+def test_quality_checks_pass_on_clean_data(spark):
+    checks = quality_checks(feature_table(spark))
+    assert all(checks.values()), checks
+
+
+def test_quality_checks_catch_bad_data(spark):
+    bad = feature_table(spark, overrides=[
+        (0, {"tag_rate_mean": None}),     # missing value
+        (1, {"difficulty": 5000.0}),      # impossible difficulty
+        (2, {"split": "train"}),          # contest 2 now sits in two splits
+    ])
+    checks = quality_checks(bad)
+    assert not checks["no_missing_values"]
+    assert not checks["difficulties_in_range"]
+    assert not checks["no_contest_in_two_splits"]
+    assert checks["labels_are_0_or_1"] and checks["no_duplicate_rows"]

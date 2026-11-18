@@ -1,31 +1,47 @@
 ==> 1/4 Unit tests
-................................                                         [100%]
+...................................                                      [100%]
 =============================== warnings summary ===============================
 ../../../../../../miniconda3/envs/nextproblem/lib/python3.10/site-packages/fastapi/testclient.py:1
   /home/sreekar/miniconda3/envs/nextproblem/lib/python3.10/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-32 passed, 1 warning in 17.40s
+35 passed, 1 warning in 20.18s
 ==> 2/4 Reproduce the DVC pipeline (dvc repro)
-Running stage 'fetch':
-> python src/ingestion/fetch_codeforces.py --n-contests 70 --users 1500 --out data/raw
-2026-11-18 21:07:00,042 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:07:05,992 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:07:15,392 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:07:32,846 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:07:44,860 INFO Contest 2215 has no rating changes, skipping
-2026-11-18 21:07:48,367 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:07:54,617 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:08:05,674 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:08:18,833 WARNING contest.ratingChanges failed: contestId: Rating changes are unavailable for this contest
-2026-11-18 21:08:30,839 INFO Contest 2216 has no rating changes, skipping
-2026-11-18 21:08:30,841 INFO Finished: 70 contests in data/raw
+Stage 'fetch' didn't change, skipping
+Running stage 'features':
+> python src/features/spark_features.py --raw data/raw --out data/processed
+26/11/18 21:55:14 WARN Utils: Your hostname, Sreekar-ASUS-Zenbook-14-UX3405CA-UX340 resolves to a loopback address: 127.0.1.1; using 10.28.102.59 instead (on interface wlo1)
+26/11/18 21:55:14 WARN Utils: Set SPARK_LOCAL_IP if you need to bind to another address
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+26/11/18 21:55:14 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+[Stage 1:>                                                          (0 + 1) / 1]                                                                                [Stage 3:>                                                          (0 + 1) / 1]                                                                                [Stage 26:==============>   (4 + 1) / 5][Stage 28:=======>          (2 + 3) / 5][Stage 30:=======================>                                  (2 + 3) / 5]                                                                                [Stage 43:>                                                       (0 + 14) / 16][Stage 43:=======>                                                (2 + 14) / 16][Stage 43:=================================================>      (14 + 2) / 16][Stage 52:>                                                       (0 + 14) / 16][Stage 52:===>                                                    (1 + 14) / 16][Stage 52:=======>                                                (2 + 14) / 16][Stage 52:===================================>                    (10 + 6) / 16]                                                                                [Stage 82:============>                                           (3 + 11) / 14][Stage 82:==============> (13 + 1) / 14][Stage 83:>               (0 + 13) / 14][Stage 83:======>          (5 + 9) / 14][Stage 84:>                (0 + 5) / 14][Stage 84:>                                                       (0 + 14) / 14][Stage 84:========================>                                (6 + 8) / 14][Stage 91:>                                                       (0 + 14) / 16][Stage 91:>               (0 + 14) / 16][Stage 94:>                 (0 + 0) / 1][Stage 91:==========>     (10 + 6) / 16][Stage 94:>                 (0 + 1) / 1][Stage 94:>                                                         (0 + 1) / 1]                                                                                [Stage 99:===>                                                    (1 + 14) / 16][Stage 99:=======>                                                (2 + 14) / 16][Stage 99:==============>                                         (4 + 12) / 16][Stage 106:>                                                      (0 + 14) / 16][Stage 106:================================================>      (14 + 2) / 16]                                                                                [Stage 151:>                                                        (0 + 8) / 8][Stage 151:==========================================>              (6 + 2) / 8]                                                                                2026-11-18 21:57:07,977 INFO Metrics: {'rows': 339576, 'contests': 68, 'users': 10270, 'label_rate': 0.35605578721700004, 'split_rows': {'val': 44234, 'test': 31820, 'train': 263522}, 'elapsed_seconds': 85.73, 'rows_per_second': 3961.0, 'quality_checks': {'not_empty': True, 'no_missing_values': True, 'labels_are_0_or_1': True, 'label_rate_plausible': True, 'ratings_in_range': True, 'difficulties_in_range': True, 'tag_rates_between_0_and_1': True, 'counts_not_negative': True, 'no_duplicate_rows': True, 'all_splits_present': True, 'no_contest_in_two_splits': True}}
+2026-11-18 21:57:08,348 INFO All 11 data quality checks passed
+2026-11-18 21:57:08,348 INFO Closing down clientserver connection
 Updating lock file 'dvc.lock'
 
-Stage 'features' didn't change, skipping
-Stage 'train' didn't change, skipping
-Stage 'export_model' didn't change, skipping
+Running stage 'train':
+> python src/training/train.py --data data/processed/features.parquet --metrics-out metrics/train_metrics.json
+2026-11-18 21:58:31,028 INFO Rows: {'train': 263522, 'val': 44234, 'test': 31820}
+2026-11-18 21:58:31,176 INFO Elo baseline: {'val': {'log_loss': 0.2322686274931346, 'auc': 0.9685423482522475}, 'test': {'log_loss': 0.24178528349780554, 'auc': 0.9645896703908942}}
+2026/11/18 21:59:44 WARNING mlflow.sklearn: Saving scikit-learn models in the pickle or cloudpickle format requires exercising caution because these formats rely on Python's object serialization mechanism, which can execute arbitrary code during deserialization. The recommended safe alternative is the 'skops' format. For more information, see: https://scikit-learn.org/stable/model_persistence.html
+2026-11-18 22:00:17,583 INFO hgb_0: val={'log_loss': 0.21931772975015212, 'auc': 0.969708479589212} test={'log_loss': 0.2244654884479254, 'auc': 0.9672728020700961}
+2026/11/18 22:00:30 WARNING mlflow.sklearn: Saving scikit-learn models in the pickle or cloudpickle format requires exercising caution because these formats rely on Python's object serialization mechanism, which can execute arbitrary code during deserialization. The recommended safe alternative is the 'skops' format. For more information, see: https://scikit-learn.org/stable/model_persistence.html
+2026-11-18 22:00:33,406 INFO hgb_1: val={'log_loss': 0.21507118892455712, 'auc': 0.9701004668680075} test={'log_loss': 0.22120545928822857, 'auc': 0.9676206908614372}
+2026/11/18 22:00:41 WARNING mlflow.sklearn: Saving scikit-learn models in the pickle or cloudpickle format requires exercising caution because these formats rely on Python's object serialization mechanism, which can execute arbitrary code during deserialization. The recommended safe alternative is the 'skops' format. For more information, see: https://scikit-learn.org/stable/model_persistence.html
+2026-11-18 22:00:43,733 INFO hgb_2: val={'log_loss': 0.2153965077691724, 'auc': 0.9700311774433894} test={'log_loss': 0.22176386574085788, 'auc': 0.9675714632436659}
+Registered model 'next-problem-classifier' already exists. Creating a new version of this model...
+Created version '4' of model 'next-problem-classifier'.
+2026-11-18 22:00:43,923 INFO Acceptance PASSED: version 4 is now 'champion'
+2026-11-18 22:00:43,924 INFO Summary written to metrics/train_metrics.json
+Updating lock file 'dvc.lock'
+
+Running stage 'export_model':
+> python src/training/export_model.py
+Downloading artifacts:   0%|          | 0/7 [00:00<?, ?it/s]Downloading artifacts:  14%|█▍        | 1/7 [00:00<00:00, 12787.51it/s]Downloading artifacts:  29%|██▊       | 2/7 [00:00<00:00, 11522.81it/s]Downloading artifacts:  43%|████▎     | 3/7 [00:00<00:00, 13162.04it/s]Downloading artifacts:  57%|█████▋    | 4/7 [00:00<00:00, 14665.40it/s]Downloading artifacts:  71%|███████▏  | 5/7 [00:00<00:00, 5489.93it/s] Downloading artifacts:  86%|████████▌ | 6/7 [00:00<00:00, 5028.14it/s]Downloading artifacts: 100%|██████████| 7/7 [00:00<00:00, 4779.44it/s]Downloading artifacts: 100%|██████████| 7/7 [00:00<00:00, 4574.65it/s]
+exported: ['MLmodel', 'conda.yaml', 'input_example.json', 'model.pkl', 'python_env.yaml', 'registered_model_meta', 'requirements.txt', 'serving_input_example.json']
+Updating lock file 'dvc.lock'
 Use `dvc push` to send your updates to remote storage.
 ==> 3/4 Pipeline graph and metrics
     +-------+    
@@ -49,9 +65,9 @@ Use `dvc push` to send your updates to remote storage.
 +--------------+ 
 | export_model | 
 +--------------+ 
-Path                               beats_baseline    best_model.config.learning_rate    best_model.config.max_depth    best_model.config.max_iter    best_model.run_id                 best_model.test.auc    best_model.test.log_loss    best_model.val.auc    best_model.val.log_loss    contests    data_md5                              elapsed_seconds    elo_baseline.test.auc    elo_baseline.test.log_loss    elo_baseline.val.auc    elo_baseline.val.log_loss    git_commit                                label_rate    registered_version    rows    rows_per_second    split_rows.test    split_rows.train    split_rows.val    users
-data/processed/spark_metrics.json  -                 -                                  -                              -                             -                                 -                      -                           -                     -                          68          -                                     31.14              -                        -                             -                       -                            -                                         0.35606       -                     339576  10903.5            31820              263522              44234             10270
-metrics/train_metrics.json         True              0.05                               6                              200                           1ba5e0784ef3486589d198e8d972f183  0.96762                0.22121                     0.9701                0.21507                    -           6ba9e0da3d90219c9f67f3022b7b2ea7.dir  -                  0.96459                  0.24179                       0.96854                 0.23227                      1c8c823a11430fcf78ef7635a35566d46730527a  -             2                     -       -                  -                  -                   -                 -
+Path                               beats_baseline    best_model.config.learning_rate    best_model.config.max_depth    best_model.config.max_iter    best_model.run_id                 best_model.test.auc    best_model.test.log_loss    best_model.val.auc    best_model.val.log_loss    contests    data_md5                              elapsed_seconds    elo_baseline.test.auc    elo_baseline.test.log_loss    elo_baseline.val.auc    elo_baseline.val.log_loss    git_commit                                label_rate    quality_checks.all_splits_present    quality_checks.counts_not_negative    quality_checks.difficulties_in_range    quality_checks.label_rate_plausible    quality_checks.labels_are_0_or_1    quality_checks.no_contest_in_two_splits    quality_checks.no_duplicate_rows    quality_checks.no_missing_values    quality_checks.not_empty    quality_checks.ratings_in_range    quality_checks.tag_rates_between_0_and_1    registered_version    rows    rows_per_second    split_rows.test    split_rows.train    split_rows.val    users
+data/processed/spark_metrics.json  -                 -                                  -                              -                             -                                 -                      -                           -                     -                          68          -                                     85.73              -                        -                             -                       -                            -                                         0.35606       True                                 True                                  True                                    True                                   True                                True                                       True                                True                                True                        True                               True                                        -                     339576  3961.0             31820              263522              44234             10270
+metrics/train_metrics.json         True              0.05                               6                              200                           049266c7b1874a5d816bdae6288a1779  0.96762                0.22121                     0.9701                0.21507                    -           8cfbf56b2fc6748ed7a417f9bfa80d5c.dir  -                  0.96459                  0.24179                       0.96854                 0.23227                      741a0d0a18cfc3b83af0214796f2da4b7a60ee56  -             -                                    -                                     -                                       -                                      -                                   -                                          -                                   -                                   -                           -                                  -                                           4                     -       -                  -                  -                   -                 -
 ==> 4/4 Acceptance gate
 test log loss: model 0.22121 vs Elo 0.24179
 test AUC:      model 0.96762 vs Elo 0.96459

@@ -24,6 +24,7 @@ services:
       MODEL_URL: http://model:5001/invocations
       HISTORY_CONTESTS: "15"
       CORS_ORIGINS: "*"
+      FRONTEND_URL: http://frontend:80/
     ports:
       - "8000:8000"
     depends_on:
@@ -47,6 +48,7 @@ services:
     image: prom/prometheus:v2.55.1
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     ports:
       - "9090:9090"
     depends_on:

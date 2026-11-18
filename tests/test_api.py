@@ -1,6 +1,5 @@
 """API tests. Codeforces and the model server are replaced by fakes, so these
 run offline and fast."""
-import pytest
 import requests
 from fastapi.testclient import TestClient
 
@@ -124,3 +123,16 @@ def test_pipeline_endpoint_returns_stages_and_service_status(monkeypatch):
     assert len(body["stages"]) == 6
     assert body["services"]["status"] == "ok"
     assert "data" in body and "model" in body
+
+
+def test_metrics_reports_service_health(monkeypatch):
+    """/metrics probes the model server and the frontend and publishes np_service_up."""
+    monkeypatch.setattr(main, "FRONTEND_URL", "http://frontend:80/")
+
+    def fake_get(url, **kwargs):
+        return FakeResponse(200 if "frontend" in url else 500)
+    monkeypatch.setattr(main.requests, "get", fake_get)
+
+    text = client.get("/metrics").text
+    assert 'np_service_up{service="frontend"} 1.0' in text
+    assert 'np_service_up{service="model_server"} 0.0' in text

@@ -6,7 +6,7 @@ Run from the repository root:
 Endpoints:
     GET /health                      liveness + model-server status
     GET /recommend?handle=...        ranked "stretch zone" problems for a user
-    GET /metrics                     Prometheus metrics
+    GET /metrics                     Prometheus metrics (also probes the model server and frontend)
     GET /pipeline                    pipeline stages, latest data/model metrics, service status
 
 The backend never loads the model. It calls the MLflow model server over REST
@@ -40,6 +40,8 @@ HANDLE_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,24}$")
 BATCH_SIZE = 5000
 TRAIN_METRICS_PATH = os.getenv("TRAIN_METRICS_PATH", "metrics/train_metrics.json")
 SPARK_METRICS_PATH = os.getenv("SPARK_METRICS_PATH", "data/processed/spark_metrics.json")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "")  # probed on every scrape; empty = not probed
+PROBE_TIMEOUT = 3  # seconds
 
 # ---- Prometheus metrics ----------------------------------------------------
 REQUESTS = Counter("np_requests_total", "HTTP requests", ["endpoint", "status"])
@@ -55,6 +57,9 @@ DRIFT = Gauge(
     "np_feature_mean_shift",
     "Relative shift of live feature mean vs training mean", ["feature"],
 )
+# The model server and the frontend expose no Prometheus metrics of their own, so the
+# backend probes them on every scrape and publishes the result (1 = up, 0 = down).
+SERVICE_UP = Gauge("np_service_up", "Health of a dependent service (1 up, 0 down)", ["service"])
 
 # Drift is tracked on user-level features (one value per request).
 MONITORED = ["rating", "n_prev_contests"]
@@ -126,20 +131,34 @@ def predict(rows: list) -> list:
     return probs
 
 
+def probe(url: str) -> bool:
+    """True if `url` answers HTTP 200 within PROBE_TIMEOUT seconds."""
+    try:
+        return requests.get(url, timeout=PROBE_TIMEOUT).status_code == 200
+    except requests.RequestException:
+        return False
+
+
+def model_server_up() -> bool:
+    """Ask the MLflow model server's own /health endpoint (derived from MODEL_URL)."""
+    up = probe(MODEL_URL.rsplit("/", 1)[0] + "/health")
+    SERVICE_UP.labels("model_server").set(int(up))
+    return up
+
+
 @app.get("/health")
 def health():
-    model_up = False
-    try:
-        base = MODEL_URL.rsplit("/", 1)[0]
-        model_up = requests.get(base + "/health", timeout=3).status_code == 200
-    except requests.RequestException:
-        pass
+    model_up = model_server_up()
     return {"status": "ok" if model_up else "degraded",
             "model_server": "up" if model_up else "down"}
 
 
 @app.get("/metrics")
 def metrics():
+    # Refresh the health gauges so every scrape sees the current state of each service.
+    model_server_up()
+    if FRONTEND_URL:
+        SERVICE_UP.labels("frontend").set(int(probe(FRONTEND_URL)))
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
@@ -237,7 +256,8 @@ STAGES = [
     {"name": "Fetch", "tool": "Codeforces API + Python",
      "what": "Downloads contests, standings and rating changes."},
     {"name": "Features", "tool": "PySpark",
-     "what": "Builds leak-free per-tag history features and a time-based split."},
+     "what": "Builds leak-free per-tag history features and a time-based split, "
+             "then runs data quality checks."},
     {"name": "Train", "tool": "scikit-learn + MLflow",
      "what": "Trains an Elo baseline and gradient boosting; every run is tracked."},
     {"name": "Register", "tool": "MLflow Model Registry + DVC",

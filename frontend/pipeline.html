@@ -93,8 +93,14 @@
 
     function stageStat(name, data, model) {
       if (name === "Features" && data) {
-        return `${data.rows.toLocaleString()} rows, ${data.contests} contests, ` +
-               `${data.users.toLocaleString()} users, ${Math.round(data.rows_per_second).toLocaleString()} rows/s`;
+        let text = `${data.rows.toLocaleString()} rows, ${data.contests} contests, ` +
+                   `${data.users.toLocaleString()} users, ${Math.round(data.rows_per_second).toLocaleString()} rows/s`;
+        if (data.quality_checks) {
+          const results = Object.values(data.quality_checks);
+          const passed = results.filter(Boolean).length;
+          text += `; data quality checks: ${passed}/${results.length} passed`;
+        }
+        return text;
       }
       if (name === "Train" && model) {
         const c = model.best_model.config;
