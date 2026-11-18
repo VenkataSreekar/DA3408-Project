@@ -104,3 +104,9 @@ docker-compose.yml                  the five services
 - Training history covers only the 68 contests in the dataset, while the live service uses up to 15 recent rated contests of any type. The drift gauges show this gap.
 - The solve probability is a contest-conditions estimate, and it is likely lower than the chance of solving in untimed practice.
 - Unrated users cannot get recommendations.
+
+
+## Demonstration video
+
+A 3-minute walkthrough of the app, the pipeline status page, MLflow, and monitoring with Grafana and Prometheus:
+[Watch the demo on Google Drive](https://drive.google.com/file/d/1ruzrAYbfr3Psq2Lv560Ffdfk_iqAnXBA/view?usp=sharing)
